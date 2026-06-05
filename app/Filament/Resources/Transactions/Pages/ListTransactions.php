@@ -10,6 +10,8 @@ class ListTransactions extends ListRecords
 {
     protected static string $resource = TransactionResource::class;
 
+    public ?string $tableGrouping = 'transacted_at:desc';
+
     protected function getHeaderActions(): array
     {
         return [
