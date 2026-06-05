@@ -12,7 +12,7 @@ class TransactionSeeder extends Seeder
     public function run(): void
     {
         $start = Carbon::create(2021, 1, 1);
-        $end = Carbon::create(2026, 5, 31);
+        $end = Carbon::create(2026, 6, 5);
 
         User::with(['accounts', 'categories'])->each(function (User $user) use ($start, $end): void {
             if ($user->accounts->isEmpty()) {
@@ -41,6 +41,7 @@ class TransactionSeeder extends Seeder
                 while ($current->lte($end)) {
                     $month = $current->month;
                     $year = $current->year;
+                    $maxDay = $current->isSameMonth($end) ? $end->day : $current->daysInMonth;
 
                     // ── Monthly salary ────────────────────────────────────
                     $rows[] = $this->txRow(
@@ -54,37 +55,41 @@ class TransactionSeeder extends Seeder
                     );
 
                     // ── Occasional freelance (60% of months) ──────────────
-                    if ($freelanceCategory && fake()->boolean(60)) {
+                    if ($freelanceCategory && fake()->boolean(60) && $maxDay >= 5) {
                         $rows[] = $this->txRow(
                             $account->id,
                             $freelanceCategory->id,
                             'income',
                             $this->jitter($salary * fake()->randomFloat(2, 0.1, 0.4), 0.05),
-                            Carbon::create($year, $month, fake()->numberBetween(5, 25)),
+                            Carbon::create($year, $month, fake()->numberBetween(5, min(25, $maxDay))),
                             'Freelance project',
                             $now,
                         );
                     }
 
                     // ── Quarterly investment returns ───────────────────────
-                    if ($investmentCategory && in_array($month, [3, 6, 9, 12])) {
+                    if ($investmentCategory && in_array($month, [3, 6, 9, 12]) && $maxDay >= 10) {
                         $rows[] = $this->txRow(
                             $account->id,
                             $investmentCategory->id,
                             'income',
                             $this->jitter($salary * fake()->randomFloat(2, 0.05, 0.15), 0.1),
-                            Carbon::create($year, $month, fake()->numberBetween(10, 28)),
+                            Carbon::create($year, $month, fake()->numberBetween(10, min(28, $maxDay))),
                             'Investment returns',
                             $now,
                         );
                     }
 
                     // ── Fixed monthly expenses ────────────────────────────
-                    $fixedExpenses = $this->fixedMonthlyExpenses($user, $currency, $year, $month, $now, $account->id);
+                    $fixedExpenses = $this->fixedMonthlyExpenses($user, $currency, $year, $month, $now, $account->id, $maxDay);
                     $rows = array_merge($rows, $fixedExpenses);
 
-                    // ── Variable daily expenses (18–28 per month) ─────────
-                    $expenseCount = fake()->numberBetween(18, 28);
+                    // ── Variable daily expenses (18–28 per month, scaled for partial months) ─────────
+                    $fullCount = fake()->numberBetween(18, 28);
+                    $expenseCount = $maxDay < $current->daysInMonth
+                        ? max(1, (int) round($fullCount * $maxDay / $current->daysInMonth))
+                        : $fullCount;
+
                     for ($i = 0; $i < $expenseCount; $i++) {
                         $category = $expenseCategories->random();
                         $rows[] = $this->txRow(
@@ -92,7 +97,7 @@ class TransactionSeeder extends Seeder
                             $category->id,
                             'expense',
                             $this->randomExpenseAmount($category->name, $currency),
-                            Carbon::create($year, $month, fake()->numberBetween(1, $current->daysInMonth)),
+                            Carbon::create($year, $month, fake()->numberBetween(1, $maxDay)),
                             fake()->optional(0.6)->sentence(3),
                             $now,
                         );
@@ -110,7 +115,7 @@ class TransactionSeeder extends Seeder
     }
 
     /** @return array<string, mixed> */
-    private function fixedMonthlyExpenses(User $user, string $currency, int $year, int $month, string $now, string $accountId): array
+    private function fixedMonthlyExpenses(User $user, string $currency, int $year, int $month, string $now, string $accountId, int $maxDay): array
     {
         $rows = [];
         $getCategory = fn (string $name) => $user->categories->firstWhere('name', $name);
@@ -123,7 +128,11 @@ class TransactionSeeder extends Seeder
             ['Gym & Fitness',     [1, 5],   0.015, 'Gym membership'],
         ];
 
-        foreach ($fixed as [$name, $days, $fraction, $desc]) {
+        foreach ($fixed as [$name, [$minDay, $maxDayRange], $fraction, $desc]) {
+            if ($minDay > $maxDay) {
+                continue;
+            }
+
             $category = $getCategory($name);
             if (! $category) {
                 continue;
@@ -135,7 +144,7 @@ class TransactionSeeder extends Seeder
                 $category->id,
                 'expense',
                 $this->jitter($salary * $fraction, 0.05),
-                Carbon::create($year, $month, fake()->numberBetween(...$days)),
+                Carbon::create($year, $month, fake()->numberBetween($minDay, min($maxDayRange, $maxDay))),
                 $desc,
                 $now,
             );

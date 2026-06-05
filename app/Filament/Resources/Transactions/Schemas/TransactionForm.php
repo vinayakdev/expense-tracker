@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Transactions\Schemas;
 
 use App\Models\Category;
 use App\Models\Transaction;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -18,6 +19,7 @@ class TransactionForm
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
                 ToggleButtons::make('type')
                     ->required()
@@ -35,7 +37,7 @@ class TransactionForm
                     ])
                     ->grouped()
                     ->live()
-                    ->afterStateUpdated(function (?string $state, ?string $old, callable $set) {
+                    ->afterStateUpdated(static function (?string $state, ?string $old, callable $set) {
                         if ($state !== $old) {
                             $set('category_id', null);
                         }
@@ -43,28 +45,27 @@ class TransactionForm
                     ->default('expense'),
                 Select::make('category_id')
                     ->label('Category')
-                    ->options(fn (callable $get) => self::categoryOptions($get('type') ?? 'expense'))
+                    ->options(static fn (callable $get) => self::categoryOptions($get('type') ?? 'expense'))
                     ->allowHtml()
                     ->required()
                     ->searchable()
                     ->live(),
-                View::make('filament.forms.components.budget-meter')
-                    ->visible(fn (callable $get) => $get('category_id') && $get('type') === 'expense'),
-                Grid::make(2)
-                    ->schema([
-                        TextInput::make('amount')
-                            ->required()
-                            ->numeric()
-                            ->minValue(0),
-                        DatePicker::make('transacted_at')
-                            ->label('Date')
-                            ->required()
-                            ->default(now())
-                            ->live(onBlur: true),
-                    ]),
-                TextInput::make('description')
-                    ->nullable()
-                    ->maxLength(255),
+                View::make('filament.forms.components.budget-meter')->visible(
+                    static fn (callable $get) => $get('category_id') && $get('type') === 'expense',
+                ),
+                Grid::make(2)->schema([
+                    TextInput::make('amount')
+                        ->required()
+                        ->numeric()
+                        ->minValue(0)
+                        ->prefix(fn () => Filament::getTenant()?->currency ?? ''),
+                    DatePicker::make('transacted_at')
+                        ->label('Date')
+                        ->required()
+                        ->default(now())
+                        ->live(onBlur: true),
+                ]),
+                TextInput::make('description')->nullable()->maxLength(255),
                 Select::make('recurrence')
                     ->label('Repeat')
                     ->default(null)
@@ -89,31 +90,35 @@ class TransactionForm
         $thirtyDaysAgo = now()->subDays(30)->toDateString();
         $sixtyDaysAgo = now()->subDays(60)->toDateString();
 
-        $scores = Transaction::selectRaw(
-            'category_id, SUM(CASE WHEN transacted_at >= ? THEN 3 WHEN transacted_at >= ? THEN 2 ELSE 1 END) as score',
-            [$thirtyDaysAgo, $sixtyDaysAgo],
-        )
+        $scores = Transaction::selectRaw('category_id, SUM(CASE WHEN transacted_at >= ? THEN 3 WHEN transacted_at >= ? THEN 2 ELSE 1 END) as score', [
+            $thirtyDaysAgo,
+            $sixtyDaysAgo,
+        ])
             ->whereIn('category_id', $categories->pluck('id'))
             ->whereNotNull('transacted_at')
             ->groupBy('category_id')
             ->pluck('score', 'category_id');
 
-        $renderOption = function (Category $category): string {
+        $renderOption = static function (Category $category): string {
             $dot = sprintf(
                 '<span style="display:inline-block;width:10px;height:10px;border-radius:50%%;background:%s;flex-shrink:0;margin-left:6px"></span>',
                 e($category->color ?? '#6366f1'),
             );
             $emoji = $category->icon ? '<span style="margin-right:4px">'.e($category->icon).'</span>' : '';
 
-            return '<span style="display:inline-flex;align-items:center;justify-content:space-between;width:100%%">'.
-                '<span>'.$emoji.e($category->name).'</span>'.
-                $dot.
-                '</span>';
+            return
+                '<span style="display:inline-flex;align-items:center;justify-content:space-between;width:100%%">'
+                .'<span>'
+                .$emoji
+                .e($category->name)
+                .'</span>'
+                .$dot
+                .'</span>';
         };
 
         $topIds = $categories
-            ->filter(fn (Category $c) => $scores->get($c->id, 0) > 0)
-            ->sortByDesc(fn (Category $c) => $scores->get($c->id, 0))
+            ->filter(static fn (Category $c) => $scores->get($c->id, 0) > 0)
+            ->sortByDesc(static fn (Category $c) => $scores->get($c->id, 0))
             ->take(5)
             ->pluck('id')
             ->all();
@@ -122,15 +127,15 @@ class TransactionForm
 
         if (! empty($topIds)) {
             $result['Top Picks'] = $categories
-                ->filter(fn (Category $c) => in_array($c->id, $topIds, true))
-                ->sortByDesc(fn (Category $c) => $scores->get($c->id, 0))
-                ->mapWithKeys(fn (Category $c) => [$c->id => $renderOption($c)])
+                ->filter(static fn (Category $c) => in_array($c->id, $topIds, true))
+                ->sortByDesc(static fn (Category $c) => $scores->get($c->id, 0))
+                ->mapWithKeys(static fn (Category $c) => [$c->id => $renderOption($c)])
                 ->toArray();
         }
 
         $remaining = $categories
-            ->filter(fn (Category $c) => ! in_array($c->id, $topIds, true))
-            ->mapWithKeys(fn (Category $c) => [$c->id => $renderOption($c)])
+            ->filter(static fn (Category $c) => ! in_array($c->id, $topIds, true))
+            ->mapWithKeys(static fn (Category $c) => [$c->id => $renderOption($c)])
             ->toArray();
 
         if (! empty($remaining)) {

@@ -17,10 +17,7 @@ class TransactionsTable
         return $table
             ->modifyQueryUsing(static fn (Builder $query) => $query->with(['account', 'category']))
             ->columns([
-                TextColumn::make('transacted_at')
-                    ->label('Date')
-                    ->date()
-                    ->sortable(),
+                TextColumn::make('transacted_at')->label('Date')->date(),
                 TextColumn::make('category.name')->searchable()->sortable(),
                 TextColumn::make('type')
                     ->badge()
@@ -28,11 +25,8 @@ class TransactionsTable
                         'income' => 'success',
                         'expense' => 'danger',
                         default => 'gray',
-                    })
-                    ->sortable(),
-                TextColumn::make('amount')
-                    ->money(static fn ($record) => $record->account->currency)
-                    ->sortable(),
+                    }),
+                TextColumn::make('amount')->money(static fn ($record) => $record->account->currency),
                 TextColumn::make('description')
                     ->searchable()
                     ->limit(30)
@@ -59,7 +53,7 @@ class TransactionsTable
             ])
             ->groupingSettingsHidden()
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()->slideOver(),
                 DeleteAction::make(),
             ])
             ->toolbarActions([

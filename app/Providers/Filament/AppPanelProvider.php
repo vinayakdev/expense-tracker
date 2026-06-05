@@ -15,8 +15,6 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -32,6 +30,7 @@ class AppPanelProvider extends PanelProvider
             ->default()
             ->id('app')
             ->path('')
+            ->viteTheme('resources/css/filament/app/theme.css')
             ->login()
             ->colors([
                 'primary' => Color::Amber,
@@ -45,17 +44,16 @@ class AppPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
-            ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
-            ])
+            ->widgets([])
             ->plugins([
                 FilamentDeveloperLoginsPlugin::make()
                     ->enabled(app()->environment('local'))
-                    ->users(fn (): array => User::query()
-                        ->orderBy('name')
-                        ->pluck('email', 'name')
-                        ->all()),
+                    ->users(
+                        static fn (): array => User::query()
+                            ->orderBy('name')
+                            ->pluck('email', 'name')
+                            ->all(),
+                    ),
             ])
             ->middleware([
                 EncryptCookies::class,
