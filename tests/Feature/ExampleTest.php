@@ -1,7 +1,11 @@
 <?php
 
-test('returns a successful response', function () {
-    $response = $this->get(route('home'));
+use Illuminate\Support\Facades\File;
 
-    $response->assertOk();
+test('resource view files have been removed', function () {
+    $viewFiles = File::isDirectory(resource_path('views'))
+        ? File::allFiles(resource_path('views'))
+        : [];
+
+    expect($viewFiles)->toBeEmpty();
 });

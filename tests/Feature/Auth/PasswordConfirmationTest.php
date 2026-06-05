@@ -1,11 +1,12 @@
 <?php
 
-use App\Models\User;
+use Illuminate\Support\Facades\Route;
 
-test('confirm password screen can be rendered', function () {
-    $user = User::factory()->create();
+test('starter password confirmation routes have been removed', function () {
+    expect(Route::has('password.confirm'))->toBeFalse()
+        ->and(Route::has('password.confirm.store'))->toBeFalse()
+        ->and(Route::has('password.confirmation'))->toBeFalse();
 
-    $response = $this->actingAs($user)->get(route('password.confirm'));
-
-    $response->assertOk();
+    $this->get('/user/confirm-password')->assertNotFound();
+    $this->post('/user/confirm-password')->assertNotFound();
 });

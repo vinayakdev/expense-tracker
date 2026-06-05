@@ -1,7 +1,5 @@
 <?php
 
-use Laravel\Fortify\Features;
-
 return [
 
     /*
@@ -73,7 +71,7 @@ return [
     |
     */
 
-    'home' => '/dashboard',
+    'home' => '/',
 
     /*
     |--------------------------------------------------------------------------
@@ -129,7 +127,7 @@ return [
     |
     */
 
-    'views' => true,
+    'views' => false,
 
     /*
     |--------------------------------------------------------------------------
@@ -142,9 +140,6 @@ return [
     |
     */
 
-    'features' => [
-        Features::registration(),
-        Features::resetPasswords(),
-    ],
+    'features' => [],
 
 ];
