@@ -16,7 +16,7 @@ use function Pest\Laravel\actingAs;
 beforeEach(function () {
     $this->user = User::factory()->create();
     $this->account = Account::factory()->create(['user_id' => $this->user->id]);
-    $this->category = Category::factory()->create(['user_id' => $this->user->id]);
+    $this->category = Category::factory()->expense()->create(['user_id' => $this->user->id]);
     actingAs($this->user);
     Filament::setTenant($this->account);
     Filament::setCurrentPanel(Filament::getPanel('app'));
@@ -73,6 +73,7 @@ test('can edit a transaction', function () {
     $transaction = Transaction::factory()->create([
         'account_id' => $this->account->id,
         'category_id' => $this->category->id,
+        'type' => 'expense',
     ]);
 
     Livewire::test(EditTransaction::class, ['record' => $transaction->id])

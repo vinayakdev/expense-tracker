@@ -2,6 +2,7 @@
     use App\Models\Budget;
     use App\Models\Transaction;
     use Filament\Facades\Filament;
+    use Illuminate\Support\Carbon;
 
     $categoryId = $get('category_id');
     $account = Filament::getTenant();
@@ -12,7 +13,7 @@
     $remaining = 0;
     $currency = $account?->currency ?? auth()->user()->reporting_currency ?? '$';
     $isOver = false;
-    $category = null;
+    $monthLabel = '';
 
     if ($categoryId && $account) {
         $budget = Budget::where('category_id', $categoryId)
@@ -21,10 +22,15 @@
             ->first();
 
         if ($budget) {
+            $date = filled($get('transacted_at')) ? Carbon::parse($get('transacted_at')) : now();
+            $monthLabel = $date->format('F Y');
+
             $spent = (float) Transaction::where('category_id', $categoryId)
                 ->where('account_id', $account->id)
                 ->where('type', 'expense')
                 ->whereNull('deleted_at')
+                ->whereYear('transacted_at', $date->year)
+                ->whereMonth('transacted_at', $date->month)
                 ->sum('amount');
 
             $percent = $budget->amount > 0
@@ -32,42 +38,41 @@
                 : 0;
             $remaining = (float) $budget->amount - $spent;
             $isOver = $spent > (float) $budget->amount;
-
-            $category = $budget->category;
         }
     }
+
+    $calloutColor = $isOver ? 'danger' : ($percent >= 80 ? 'warning' : 'success');
+    $calloutIcon = $isOver ? 'heroicon-o-exclamation-triangle' : ($percent >= 80 ? 'heroicon-o-exclamation-circle' : 'heroicon-o-check-circle');
 @endphp
 
 @if($budget)
-    <div class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-4 space-y-2">
-        <div class="flex items-center justify-between text-sm">
-            <span class="font-medium text-gray-700 dark:text-gray-300">
-                Budget limit
-            </span>
-            <span class="font-semibold {{ $isOver ? 'text-danger-600 dark:text-danger-400' : 'text-gray-900 dark:text-white' }}">
-                {{ $currency }} {{ number_format($spent, 2) }}
-                <span class="text-gray-400 dark:text-gray-500 font-normal">/ {{ $currency }} {{ number_format((float) $budget->amount, 2) }}</span>
-            </span>
-        </div>
+    <x-filament::callout :color="$calloutColor" :icon="$calloutIcon">
+        <x-slot name="heading">
+            Budget &middot; {{ $monthLabel }}
+        </x-slot>
 
-        <div class="w-full h-2.5 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
-            <div
-                class="h-full rounded-full transition-all duration-300 {{ $isOver ? 'bg-danger-500' : ($percent >= 80 ? 'bg-warning-500' : 'bg-success-500') }}"
-                style="width: {{ $percent }}%"
-            ></div>
-        </div>
+        <x-slot name="description">
+            <span class="font-semibold">{{ $currency }} {{ number_format($spent, 2) }}</span>
+            <span class="text-gray-400 dark:text-gray-500"> / {{ $currency }} {{ number_format((float) $budget->amount, 2) }}</span>
+        </x-slot>
 
-        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-            <span>{{ $percent }}% used</span>
-            @if($isOver)
-                <span class="text-danger-600 dark:text-danger-400 font-medium">
-                    {{ $currency }} {{ number_format(abs($remaining), 2) }} over budget
-                </span>
-            @else
-                <span class="text-success-600 dark:text-success-400">
-                    {{ $currency }} {{ number_format($remaining, 2) }} remaining
-                </span>
-            @endif
-        </div>
-    </div>
+        <x-slot name="footer">
+            <div class="space-y-1.5 w-full">
+                <div class="w-full h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
+                    <div
+                        class="h-full rounded-full transition-all duration-300 {{ $isOver ? 'bg-danger-500' : ($percent >= 80 ? 'bg-warning-500' : 'bg-success-500') }}"
+                        style="width: {{ $percent }}%"
+                    ></div>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <span>{{ $percent }}% used</span>
+                    @if($isOver)
+                        <span>{{ $currency }} {{ number_format(abs($remaining), 2) }} over budget</span>
+                    @else
+                        <span>{{ $currency }} {{ number_format($remaining, 2) }} remaining</span>
+                    @endif
+                </div>
+            </div>
+        </x-slot>
+    </x-filament::callout>
 @endif
