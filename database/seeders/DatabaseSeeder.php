@@ -10,23 +10,28 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        collect([
-            ['name' => 'Test User', 'email' => 'test@example.com'],
-            ['name' => 'Avery Stone', 'email' => 'avery@example.com'],
-            ['name' => 'Blake Carter', 'email' => 'blake@example.com'],
-            ['name' => 'Casey Morgan', 'email' => 'casey@example.com'],
-            ['name' => 'Drew Parker', 'email' => 'drew@example.com'],
-        ])->each(fn (array $user): User => User::query()->updateOrCreate(
-            ['email' => $user['email']],
-            [
-                'name' => $user['name'],
-                'password' => 'password',
-            ],
-        ));
+        $users = [
+            ['name' => 'Test User',    'email' => 'test@example.com',  'reporting_currency' => 'INR'],
+            ['name' => 'Avery Stone',  'email' => 'avery@example.com', 'reporting_currency' => 'USD'],
+            ['name' => 'Blake Carter', 'email' => 'blake@example.com', 'reporting_currency' => 'INR'],
+            ['name' => 'Casey Morgan', 'email' => 'casey@example.com', 'reporting_currency' => 'GBP'],
+            ['name' => 'Drew Parker',  'email' => 'drew@example.com',  'reporting_currency' => 'AUD'],
+        ];
+
+        foreach ($users as $data) {
+            User::query()->updateOrCreate(
+                ['email' => $data['email']],
+                ['name' => $data['name'], 'password' => 'password', 'reporting_currency' => $data['reporting_currency']],
+            );
+        }
+
+        $this->call([
+            AccountSeeder::class,
+            CategorySeeder::class,
+            TransactionSeeder::class,
+            BudgetSeeder::class,
+        ]);
     }
 }

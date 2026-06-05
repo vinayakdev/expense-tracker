@@ -22,7 +22,6 @@ database/
 │   ├── name                    VARCHAR(255)     DEFAULT 'Account 1'
 │   ├── currency                CHAR(3)          IMMUTABLE after creation
 │   ├── balance                 DECIMAL(19,4)    DEFAULT 0
-│   ├── name_edited_at          TIMESTAMP        NULLABLE  (null = rename still available)
 │   ├── created_at              TIMESTAMP
 │   └── updated_at              TIMESTAMP
 │

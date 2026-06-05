@@ -2,6 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\EditAccountProfile;
+use App\Filament\Pages\RegisterAccount;
+use App\Models\Account;
+use App\Models\User;
+use DutchCodingCompany\FilamentDeveloperLogins\FilamentDeveloperLoginsPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -31,6 +36,9 @@ class AppPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->tenant(Account::class)
+            ->tenantRegistration(RegisterAccount::class)
+            ->tenantProfile(EditAccountProfile::class)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -40,6 +48,14 @@ class AppPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
                 FilamentInfoWidget::class,
+            ])
+            ->plugins([
+                FilamentDeveloperLoginsPlugin::make()
+                    ->enabled(app()->environment('local'))
+                    ->users(fn (): array => User::query()
+                        ->orderBy('name')
+                        ->pluck('email', 'name')
+                        ->all()),
             ])
             ->middleware([
                 EncryptCookies::class,
