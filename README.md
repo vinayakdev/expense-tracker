@@ -124,6 +124,16 @@ return [
 Indian grouping: `1,00,00,000` (thousands then lakhs/crores).
 Western grouping: `1,000,000` (thousands throughout).
 
+**Decimal suppression rule:** if the decimal portion is exactly zero, it is omitted from display.
+
+| Raw value | Formatted |
+|---|---|
+| `1000.00` | `₹1,000` |
+| `1000.50` | `₹1,000.50` |
+| `1000.10` | `₹1,000.10` |
+
+This applies to all currencies. JPY already has 0 decimal places and is unaffected.
+
 ### `ExchangeRateService` (`App\Services\ExchangeRateService`)
 
 Reads rates from `config/exchange_rates.php`. Exposes `convert(amount, from, to)`. All rates are stored relative to INR. Converting USD → EUR goes USD → INR → EUR internally. Swapping to a live API later only touches this class.
