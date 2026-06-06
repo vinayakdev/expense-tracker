@@ -5,8 +5,8 @@
     @endphp
 
     <section
-        x-data="{ isLoadingMonth: false, loadingMonthLabel: '' }"
-        x-on:transaction-month-loading.window="isLoadingMonth = true; loadingMonthLabel = $event.detail.monthLabel || ''"
+        x-data="{ isLoadingMonth: false }"
+        x-on:transaction-month-loading.window="isLoadingMonth = true"
         x-on:transaction-month-loaded.window="isLoadingMonth = false"
         class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-gray-950"
     >
@@ -26,7 +26,7 @@
                 class="flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700 ring-1 ring-primary-200 dark:bg-primary-400/10 dark:text-primary-300 dark:ring-primary-400/30"
             >
                 <x-filament::loading-indicator class="h-4 w-4" />
-                <span>Loading transactions for <span x-text="loadingMonthLabel"></span></span>
+                <span>Loading transactions</span>
             </div>
         </div>
 
@@ -142,7 +142,7 @@
             >
                 <div class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:text-gray-200 dark:ring-white/10">
                     <x-filament::loading-indicator class="h-4 w-4" />
-                    <span>Loading transactions for <span x-text="loadingMonthLabel"></span></span>
+                    <span>Loading transactions</span>
                 </div>
             </div>
         </div>
