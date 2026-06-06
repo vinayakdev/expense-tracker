@@ -3,7 +3,6 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\EditAccountProfile;
-use App\Filament\Pages\RegisterAccount;
 use App\Models\Account;
 use App\Models\User;
 use DutchCodingCompany\FilamentDeveloperLogins\FilamentDeveloperLoginsPlugin;
@@ -31,12 +30,10 @@ class AppPanelProvider extends PanelProvider
             ->id('app')
             ->path('')
             ->viteTheme('resources/css/filament/app/theme.css')
-            ->login()
             ->colors([
                 'primary' => Color::Amber,
             ])
             ->tenant(Account::class)
-            ->tenantRegistration(RegisterAccount::class)
             ->tenantProfile(EditAccountProfile::class)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

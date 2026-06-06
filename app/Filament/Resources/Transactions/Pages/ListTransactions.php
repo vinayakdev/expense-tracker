@@ -91,7 +91,11 @@ class ListTransactions extends ListRecords
             ->icon('heroicon-m-pencil-square')
             ->color('gray')
             ->tooltip('Edit transaction')
-            ->label('Edit transaction');
+            ->label('Edit transaction')
+            ->after(function (): void {
+                unset($this->groupedTransactions);
+                unset($this->totalTransactionsInMonth);
+            });
     }
 
     public function deleteTransactionAction(): DeleteAction
@@ -102,7 +106,11 @@ class ListTransactions extends ListRecords
             ->icon('heroicon-m-trash')
             ->color('danger')
             ->tooltip('Delete transaction')
-            ->label('Delete transaction');
+            ->label('Delete transaction')
+            ->after(function (): void {
+                unset($this->groupedTransactions);
+                unset($this->totalTransactionsInMonth);
+            });
     }
 
     /** @return Collection<string, Collection<int, Transaction>> */
