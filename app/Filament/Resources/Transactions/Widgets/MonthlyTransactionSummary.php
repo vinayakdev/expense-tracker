@@ -184,30 +184,31 @@ class MonthlyTransactionSummary extends Widget
             return $this->emptyInsights();
         }
 
-        $expenses = $query->with('category')->get();
+        $count = (clone $query)->count();
 
-        if ($expenses->isEmpty()) {
+        if ($count === 0) {
             return $this->emptyInsights();
         }
 
-        $highestExpense = $expenses->sortByDesc('amount')->first();
+        $highestExpense = (clone $query)
+            ->with('category')
+            ->orderByDesc('amount')
+            ->first();
 
-        $topCategoryGroup = $expenses
+        $topCategory = (clone $query)
+            ->select('category_id', DB::raw('SUM(amount) as category_total'))
             ->groupBy('category_id')
-            ->map(fn (Collection $group): array => [
-                'category' => $group->first()->category,
-                'total' => $group->sum(fn (Transaction $t): float => (float) $t->amount),
-            ])
-            ->sortByDesc('total')
+            ->orderByDesc('category_total')
+            ->with('category')
             ->first();
 
         return [
-            'expense_count' => $expenses->count(),
+            'expense_count' => $count,
             'highest_expense_amount' => (float) $highestExpense->amount,
             'highest_expense_name' => $highestExpense->description ?: ($highestExpense->category?->name ?? 'No expense'),
             'highest_expense_category' => $highestExpense->category?->name ?? 'Uncategorized',
-            'top_category_name' => $topCategoryGroup['category']?->name ?? 'No category',
-            'top_category_total' => (float) $topCategoryGroup['total'],
+            'top_category_name' => $topCategory?->category?->name ?? 'No category',
+            'top_category_total' => (float) ($topCategory?->category_total ?? 0),
         ];
     }
 
