@@ -50,6 +50,30 @@
                             Sign in
                         </flux:button>
                     </form>
+
+                    @if ($quickLoginUsers->isNotEmpty())
+                        <div class="mt-6">
+                            <div class="relative">
+                                <div class="absolute inset-0 flex items-center">
+                                    <div class="w-full border-t border-zinc-200 dark:border-zinc-700"></div>
+                                </div>
+                                <div class="relative flex justify-center text-xs">
+                                    <span class="bg-white dark:bg-zinc-900 px-2 text-zinc-400">Quick login</span>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex flex-col gap-2">
+                                @foreach ($quickLoginUsers as $user)
+                                    <flux:button
+                                        wire:click="quickLogin({{ $user->id }})"
+                                        variant="primary"
+                                        class="w-full"
+                                    >
+                                        {{ $user->name }}
+                                    </flux:button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Register panel --}}

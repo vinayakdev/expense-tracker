@@ -66,16 +66,6 @@ class TransactionForm
                         ->live(onBlur: true),
                 ]),
                 TextInput::make('description')->nullable()->maxLength(255),
-                Select::make('recurrence')
-                    ->label('Repeat')
-                    ->default(null)
-                    ->placeholder('None (one-time)')
-                    ->options([
-                        'weekly' => 'Weekly',
-                        'monthly' => 'Monthly',
-                        'yearly' => 'Yearly',
-                    ])
-                    ->nullable(),
             ]);
     }
 

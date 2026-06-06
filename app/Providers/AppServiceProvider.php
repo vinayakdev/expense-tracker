@@ -2,7 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use App\Observers\UserObserver;
 use Carbon\CarbonImmutable;
+use Filament\Facades\Filament;
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        User::observe(UserObserver::class);
         $this->configureDefaults();
     }
 
@@ -31,6 +37,17 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureDefaults(): void
     {
+        RedirectIfAuthenticated::redirectUsing(function () {
+            $panel = Filament::getPanel('app');
+            $tenant = Auth::user()?->getDefaultTenant($panel);
+
+            if ($tenant) {
+                return route('filament.app.pages.dashboard', ['tenant' => $tenant]);
+            }
+
+            return route('account.setup');
+        });
+
         Date::use(CarbonImmutable::class);
 
         DB::prohibitDestructiveCommands(
